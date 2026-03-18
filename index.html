@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>费用报销自动化工具 — ExpenseTool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            color: #1a1a2e;
+            background: #f8f9fc;
+            line-height: 1.7;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            padding: 100px 20px 80px;
+            text-align: center;
+        }
+        .hero h1 { font-size: 2.8rem; font-weight: 800; letter-spacing: -0.5px; }
+        .hero p  { font-size: 1.2rem; opacity: 0.85; margin-top: 16px; max-width: 640px; margin-left: auto; margin-right: auto; }
+        .hero .badges { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .badge {
+            display: inline-block; padding: 6px 16px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 600;
+            background: rgba(255,255,255,0.12); backdrop-filter: blur(4px);
+        }
+        .cta-group { margin-top: 36px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-block; padding: 14px 32px; border-radius: 8px;
+            font-size: 1rem; font-weight: 700; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-primary { background: #6c63ff; color: #fff; }
+        .btn-primary:hover { background: #5a52e0; transform: translateY(-1px); }
+        .btn-outline { border: 2px solid rgba(255,255,255,0.4); color: #fff; }
+        .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,0.08); }
+
+        /* ── Section ── */
+        .section { max-width: 1000px; margin: 0 auto; padding: 72px 24px; }
+        .section-wide { max-width: 100%; }
+        .section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 36px; text-align: center; }
+        .section h2 span { color: #6c63ff; }
+        .section-desc { text-align: center; color: #888; margin: -20px auto 36px; max-width: 600px; font-size: 0.95rem; }
+
+        /* ── Features Grid ── */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+        .card {
+            background: #fff; border-radius: 12px; padding: 28px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-3px); }
+        .card .icon { font-size: 2rem; margin-bottom: 12px; }
+        .card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+        .card p  { font-size: 0.92rem; color: #555; }
+
+        /* ── Flow ── */
+        .flow { display: flex; align-items: flex-start; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+        .step { text-align: center; width: 140px; }
+        .step .num {
+            width: 44px; height: 44px; border-radius: 50%; background: #6c63ff; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.1rem; margin: 0 auto 10px;
+        }
+        .step h4 { font-size: 0.95rem; font-weight: 700; }
+        .step p  { font-size: 0.82rem; color: #666; margin-top: 4px; }
+        .arrow { font-size: 1.5rem; color: #ccc; margin-top: 10px; }
+
+        /* ── Screenshots ── */
+        .screenshots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 12px; }
+        .screenshot {
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            background: #fff;
+        }
+        .screenshot-full {
+            grid-column: 1 / -1;
+            max-width: 860px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .ss-titlebar {
+            background: #f0f2f6; padding: 8px 14px; display: flex; align-items: center; gap: 8px;
+            border-bottom: 1px solid #e0e3ea;
+        }
+        .ss-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .ss-dot-r { background: #ff5f57; }
+        .ss-dot-y { background: #febc2e; }
+        .ss-dot-g { background: #28c840; }
+        .ss-title { margin-left: 8px; font-size: 0.78rem; color: #999; }
+        .ss-body { padding: 20px; font-size: 0.82rem; }
+        .ss-label {
+            text-align: center; margin-top: 12px; font-size: 0.88rem; color: #666; font-weight: 600;
+            padding-bottom: 14px;
+        }
+
+        /* ── Sidebar mockup ── */
+        .mock-sidebar {
+            background: #fff; width: 100%; font-size: 0.82rem;
+            display: flex; min-height: 400px;
+        }
+        .mock-sb-left {
+            width: 240px; min-width: 240px; background: #fafafa; padding: 16px; border-right: 1px solid #eee;
+        }
+        .mock-sb-right { flex: 1; padding: 20px; overflow: hidden; }
+        .mock-label { font-size: 0.72rem; color: #666; margin-bottom: 4px; font-weight: 600; }
+        .mock-select {
+            width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 0.8rem; background: #fff; margin-bottom: 14px; color: #333;
+        }
+        .mock-btn {
+            width: 100%; padding: 10px; border: none; border-radius: 6px;
+            font-size: 0.85rem; font-weight: 700; cursor: pointer; margin-top: 8px;
+        }
+        .mock-btn-primary { background: #ff4b4b; color: #fff; }
+        .mock-sb-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+        .mock-badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+        .mock-badge { background: #e8e6ff; color: #6c63ff; padding: 3px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+        .mock-status {
+            background: #e6ffe8; border-left: 3px solid #28c840; padding: 8px 12px;
+            border-radius: 0 6px 6px 0; margin-bottom: 12px; font-size: 0.78rem;
+        }
+        .mock-status-warn {
+            background: #fff8e6; border-left: 3px solid #ffc107;
+        }
+
+        /* ── Table mockup ── */
+        .mock-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        .mock-table th {
+            background: #f7f7fa; padding: 7px 8px; text-align: left;
+            border-bottom: 2px solid #e0e3ea; font-weight: 700; white-space: nowrap;
+        }
+        .mock-table td {
+            padding: 6px 8px; border-bottom: 1px solid #f0f0f4;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
+        }
+        .mock-table tr:hover td { background: #f8f8fc; }
+        .mock-check { color: #28c840; font-weight: bold; }
+        .mock-conf-h { color: #28c840; }
+        .mock-conf-m { color: #f5a623; }
+
+        /* ── File tree mockup ── */
+        .mock-tree { font-family: "Cascadia Code", "Fira Code", monospace; font-size: 0.78rem; line-height: 1.9; color: #444; }
+        .mock-tree .folder { color: #6c63ff; font-weight: 700; }
+        .mock-tree .file { color: #555; }
+
+        /* ── Excel mockup ── */
+        .mock-excel { font-size: 0.7rem; }
+        .mock-excel table { width: 100%; border-collapse: collapse; }
+        .mock-excel th {
+            background: #217346; color: #fff; padding: 6px 8px; text-align: center;
+            font-weight: 700; border: 1px solid #1a5e38;
+        }
+        .mock-excel td {
+            padding: 5px 8px; border: 1px solid #d4e5dc; text-align: center;
+            white-space: nowrap;
+        }
+        .mock-excel tr:nth-child(even) td { background: #f0f8f4; }
+
+        /* ── Tech Stack ── */
+        .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .tech-item {
+            background: #fff; border-radius: 10px; padding: 18px 20px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        }
+        .tech-item .emoji { font-size: 1.6rem; }
+        .tech-item strong { display: block; font-size: 0.95rem; }
+        .tech-item span { font-size: 0.82rem; color: #888; }
+
+        /* ── Install ── */
+        .install-steps { max-width: 680px; margin: 0 auto; }
+        .install-step {
+            background: #fff; border-radius: 10px; padding: 20px 24px; margin-bottom: 16px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        }
+        .install-step h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .install-step h4 .step-num {
+            display: inline-block; width: 26px; height: 26px; border-radius: 50%;
+            background: #6c63ff; color: #fff; text-align: center; line-height: 26px;
+            font-size: 0.8rem; margin-right: 8px;
+        }
+        pre {
+            background: #1e1e2e; color: #cdd6f4; padding: 14px 18px; border-radius: 8px;
+            overflow-x: auto; font-size: 0.88rem; line-height: 1.6; margin-top: 8px;
+        }
+        code { font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace; }
+        .note { background: #fffbe6; border-left: 4px solid #ffc107; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 12px; font-size: 0.9rem; }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center; padding: 48px 20px; color: #999; font-size: 0.88rem;
+            border-top: 1px solid #eee; margin-top: 40px;
+        }
+        footer a { color: #6c63ff; text-decoration: none; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .hero p  { font-size: 1rem; }
+            .arrow { display: none; }
+            .screenshots { grid-template-columns: 1fr; }
+            .mock-sidebar { flex-direction: column; }
+            .mock-sb-left { width: 100%; min-width: auto; border-right: none; border-bottom: 1px solid #eee; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════ Hero ════════════ -->
+<section class="hero">
+    <h1>💰 费用报销自动化工具</h1>
+    <p>基于 OCR + AI 大模型，自动识别发票/收据/信用卡账单，智能分类、汇率换算、一键生成报销 Excel。</p>
+    <div class="badges">
+        <span class="badge">🇨🇳 中英文 OCR</span>
+        <span class="badge">🤖 DeepSeek AI</span>
+        <span class="badge">📊 Excel 输出</span>
+        <span class="badge">💱 自动汇率</span>
+        <span class="badge">🖥️ 本地运行</span>
+    </div>
+    <div class="cta-group">
+        <a href="https://github.com/royhuroy/expensetool" class="btn btn-primary" target="_blank">⬇ GitHub 下载</a>
+        <a href="#screenshots" class="btn btn-outline">🖼️ 界面预览</a>
+        <a href="#install" class="btn btn-outline">📖 使用指南</a>
+    </div>
+</section>
+
+<!-- ════════════ Features ════════════ -->
+<div class="section">
+    <h2>核心<span>功能</span></h2>
+    <div class="features">
+        <div class="card">
+            <div class="icon">📸</div>
+            <h3>智能 OCR 识别</h3>
+            <p>支持 PDF、JPG、PNG、HEIC 等格式。本地 RapidOCR 引擎，中英文混合识别，无需上传云端，隐私安全。</p>
+        </div>
+        <div class="card">
+            <div class="icon">🤖</div>
+            <h3>AI 智能分类</h3>
+            <p>基于 DeepSeek 大语言模型，自动识别发票性质并归类。支持 14 种一级费用类目，根据文件名、商户、子文件夹智能判断。</p>
+        </div>
+        <div class="card">
+            <div class="icon">💳</div>
+            <h3>信用卡账单解析</h3>
+            <p>支持美国信用卡 PDF 账单，可选「全部明细」或「仅高亮标记明细」两种模式。OpenCV 自动检测高亮区域。</p>
+        </div>
+        <div class="card">
+            <div class="icon">💱</div>
+            <h3>自动汇率换算</h3>
+            <p>自动从中国人民银行外汇交易中心获取官方汇率，支持 USD / HKD / EUR / GBP / JPY 等 9 种货币。</p>
+        </div>
+        <div class="card">
+            <div class="icon">👥</div>
+            <h3>多人报销规则</h3>
+            <p>每个报销人可配置独立的分类规则（餐饮→团建费 or 招待费），AI 会根据每人规则做个性化分类。</p>
+        </div>
+        <div class="card">
+            <div class="icon">📁</div>
+            <h3>文件自动重命名</h3>
+            <p>处理后自动按「一级-二级-三级-币种-金额」格式重命名发票文件，整理归档省时省力。</p>
+        </div>
+        <div class="card">
+            <div class="icon">🔍</div>
+            <h3>智能去重</h3>
+            <p>自动检测批次内重复和历史重复，避免同一张发票重复报销。模糊匹配，容忍 OCR 偏差。</p>
+        </div>
+        <div class="card">
+            <div class="icon">📊</div>
+            <h3>Excel 一键导出</h3>
+            <p>按公司已有的报销表格格式自动生成 Excel。所有字段在导出前都可以在网页上编辑修改。</p>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ Screenshots ════════════ -->
+<div class="section section-wide" id="screenshots" style="background:#fff; padding:72px 24px;">
+    <h2>界面<span>预览</span></h2>
+    <p class="section-desc">Streamlit Web 界面，左侧选人填年月，右侧实时查看处理进度和分类结果</p>
+
+    <div style="max-width:1000px; margin:0 auto;">
+        <div class="screenshots">
+
+            <!-- Screenshot 1: Main UI with sidebar -->
+            <div class="screenshot screenshot-full">
+                <div class="ss-titlebar">
+                    <div class="ss-dot ss-dot-r"></div>
+                    <div class="ss-dot ss-dot-y"></div>
+                    <div class="ss-dot ss-dot-g"></div>
+                    <span class="ss-title">localhost:8501 — 费用报销工具</span>
+                </div>
+                <div class="mock-sidebar">
+                    <div class="mock-sb-left">
+                        <div class="mock-sb-title">📊 费用报销工具</div>
+                        <hr style="border:none;border-top:1px solid #eee;margin:10px 0;">
+                        <div class="mock-label">报销人</div>
+                        <div class="mock-select">Roy (财务)</div>
+                        <div class="mock-label">报销年度</div>
+                        <div class="mock-select">2026</div>
+                        <div class="mock-label">报销月度</div>
+                        <div class="mock-select">3</div>
+                        <div class="mock-label">本次报销说明（可选）</div>
+                        <div class="mock-select" style="height:50px;"></div>
+                        <div class="mock-label">📁 发票目录: invoices/202603/Roy</div>
+                        <div class="mock-label" style="margin-top:4px;">📄 检测到 <b>22</b> 个文件</div>
+                        <button class="mock-btn mock-btn-primary" style="margin-top:14px;">🚀 开始处理</button>
+                    </div>
+                    <div class="mock-sb-right">
+                        <div class="mock-status">✅ 汇率获取成功（9 种货币）</div>
+                        <div class="mock-status">✅ OCR 完成，共 42 条记录</div>
+                        <div class="mock-status mock-status-warn" style="background:#fff3e0;border-color:#ff9800;">🔄 检查重复 ... 发现 0 条重复</div>
+                        <div class="mock-status">✅ 分类完成 — 批量分类 5 批，共 42 条</div>
+                        <div style="margin-top:16px;">
+                            <div class="mock-badge-row">
+                                <span class="mock-badge">软件费 ×8</span>
+                                <span class="mock-badge">办公费 ×5</span>
+                                <span class="mock-badge">招待费 ×4</span>
+                                <span class="mock-badge">美国出差打车 ×7</span>
+                                <span class="mock-badge">美国-招待费 ×9</span>
+                                <span class="mock-badge">团建费 ×3</span>
+                                <span class="mock-badge">宣传费 ×2</span>
+                                <span class="mock-badge">通讯费 ×2</span>
+                                <span class="mock-badge">交通费 ×1</span>
+                                <span class="mock-badge">快递费 ×1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="ss-label">▲ 主界面：左侧选择报销人和参数，右侧实时显示处理进度</p>
+            </div>
+
+            <!-- Screenshot 2: Editable results table -->
+            <div class="screenshot screenshot-full">
+                <div class="ss-titlebar">
+                    <div class="ss-dot ss-dot-r"></div>
+                    <div class="ss-dot ss-dot-y"></div>
+                    <div class="ss-dot ss-dot-g"></div>
+                    <span class="ss-title">分类结果 — 可编辑表格</span>
+                </div>
+                <div class="ss-body" style="padding:12px; overflow-x:auto;">
+                    <table class="mock-table">
+                        <thead>
+                            <tr>
+                                <th>保留</th><th>可信度</th><th>文件</th><th>供应商</th><th>金额</th><th>币种</th><th>人民币</th><th>一级</th><th>二级</th><th>三级</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-h">✅高</td><td>Claude软件费.jpg</td><td>Claude.ai</td><td>20.00</td><td>USD</td><td>145.60</td><td>软件费</td><td>Claude</td><td>3月</td></tr>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-h">✅高</td><td>coding session午饭.jpg</td><td>马修粥铺</td><td>128.00</td><td>RMB</td><td>128.00</td><td>团建费</td><td>coding session</td><td>午饭</td></tr>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-h">✅高</td><td>装修-小米摄像头.jpg</td><td>小米商城</td><td>798.00</td><td>RMB</td><td>798.00</td><td>办公费</td><td>装修</td><td>小米摄像头</td></tr>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-m">⚡中</td><td>招待 ¥1,771/鲜语.pdf</td><td>鲜语运营管理</td><td>373.00</td><td>RMB</td><td>373.00</td><td>招待费</td><td>鲜语运营管理</td><td>2026/02/26</td></tr>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-h">✅高</td><td>港澳直通车600.pdf</td><td>粤港汽车运输</td><td>600.00</td><td>RMB</td><td>600.00</td><td>交通费</td><td>港澳直通车</td><td>2026/03/05</td></tr>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-h">✅高</td><td>信用卡-highlight.pdf</td><td>UBER TRIP</td><td>32.50</td><td>USD</td><td>236.60</td><td>美国出差打车</td><td>Uber</td><td>2026/01/15</td></tr>
+                            <tr><td class="mock-check">☑</td><td class="mock-conf-h">✅高</td><td>信用卡-highlight.pdf</td><td>FRONTIER AI</td><td>5.00</td><td>USD</td><td>36.40</td><td>软件费</td><td>Frontier AI</td><td>1月</td></tr>
+                            <tr style="color:#bbb;"><td>☐</td><td>⚠️重复</td><td>快递费_copy.pdf</td><td>顺丰速运</td><td>271.00</td><td>RMB</td><td>271.00</td><td>快递费</td><td>顺丰</td><td>—</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="ss-label">▲ 可编辑表格：所有字段均可在导出前修改，重复记录自动标记</p>
+            </div>
+        </div>
+
+        <!-- Row 2: Output files -->
+        <div class="screenshots" style="margin-top:28px;">
+
+            <!-- Screenshot 3: Output file tree -->
+            <div class="screenshot">
+                <div class="ss-titlebar">
+                    <div class="ss-dot ss-dot-r"></div>
+                    <div class="ss-dot ss-dot-y"></div>
+                    <div class="ss-dot ss-dot-g"></div>
+                    <span class="ss-title">output/ 输出目录</span>
+                </div>
+                <div class="ss-body">
+                    <div class="mock-tree">
+                        <div class="folder">📂 output/Roy_2026_03/</div>
+                        <div class="file">&nbsp;&nbsp;├── 📊 Roy_2026年3月_报销报表.xlsx</div>
+                        <div class="folder">&nbsp;&nbsp;└── 📂 renamed_files/</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 软件费-Claude-3月-USD-20.jpg</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 软件费-ChatGPT-2月-RMB-113.jpg</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 团建费-coding session-午饭-RMB-128.jpg</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 办公费-装修-小米摄像头-RMB-798.jpg</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 招待费-鲜语运营管理-2026_02_26-RMB-373.pdf</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 交通费-港澳直通车-2026_03_05-RMB-600.pdf</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 快递费-顺丰--RMB-271.pdf</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 通讯费-26年2月--RMB-590.58.pdf</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 宣传费-播客EP05剪辑--RMB-1000.jpg</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 信用卡账单-统计highlight.pdf</div>
+                        <div class="file">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <i>... 共 22 个文件</i></div>
+                    </div>
+                </div>
+                <p class="ss-label">▲ 自动重命名：一级-二级-三级-币种-金额</p>
+            </div>
+
+            <!-- Screenshot 4: Excel output -->
+            <div class="screenshot">
+                <div class="ss-titlebar">
+                    <div class="ss-dot ss-dot-r"></div>
+                    <div class="ss-dot ss-dot-y"></div>
+                    <div class="ss-dot ss-dot-g"></div>
+                    <span class="ss-title">Excel 报销报表</span>
+                </div>
+                <div class="ss-body mock-excel" style="padding:12px; overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr><th>年度</th><th>月度</th><th>一级</th><th>供应商</th><th>日期</th><th>币种</th><th>原币</th><th>汇率</th><th>人民币</th><th>文件名</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>2026年</td><td>3月</td><td>软件费</td><td>Claude.ai</td><td>2026/03/01</td><td>USD</td><td>20.00</td><td>7.28</td><td>145.60</td><td>软件费-Claude-3月...</td></tr>
+                            <tr><td>2026年</td><td>3月</td><td>团建费</td><td>马修粥铺</td><td>2026/02/28</td><td>RMB</td><td>128.00</td><td>1.00</td><td>128.00</td><td>团建费-coding ses...</td></tr>
+                            <tr><td>2026年</td><td>3月</td><td>办公费</td><td>小米商城</td><td>2026/03/10</td><td>RMB</td><td>798.00</td><td>1.00</td><td>798.00</td><td>办公费-装修-小米...</td></tr>
+                            <tr><td>2026年</td><td>3月</td><td>招待费</td><td>鲜语</td><td>2026/02/26</td><td>RMB</td><td>373.00</td><td>1.00</td><td>373.00</td><td>招待费-鲜语运营...</td></tr>
+                            <tr><td>2026年</td><td>3月</td><td>美国出差打车</td><td>UBER</td><td>2026/01/15</td><td>USD</td><td>32.50</td><td>7.28</td><td>236.60</td><td>信用卡账单-统计...</td></tr>
+                            <tr><td>2026年</td><td>3月</td><td>交通费</td><td>粤港汽车</td><td>2026/03/05</td><td>RMB</td><td>600.00</td><td>1.00</td><td>600.00</td><td>交通费-港澳直通...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="ss-label">▲ Excel 输出：复制公司已有报表格式，直接可用</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ Flow ════════════ -->
+<div class="section">
+    <h2>使用<span>流程</span></h2>
+    <div class="flow">
+        <div class="step">
+            <div class="num">1</div>
+            <h4>放入发票</h4>
+            <p>将文件放入 invoices/ 文件夹</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+            <div class="num">2</div>
+            <h4>选择报销人</h4>
+            <p>在网页 UI 中选人、填年月</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+            <div class="num">3</div>
+            <h4>一键处理</h4>
+            <p>OCR → 解析 → 分类 → 汇率</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+            <div class="num">4</div>
+            <h4>在线审核</h4>
+            <p>在网页表格中检查和修改</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+            <div class="num">5</div>
+            <h4>导出 Excel</h4>
+            <p>生成报表 + 文件归档</p>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ Tech ════════════ -->
+<div class="section" style="background:#fff; max-width:100%; padding:72px 24px;">
+    <h2>技术<span>架构</span></h2>
+    <div style="max-width:1000px; margin:0 auto;">
+        <div class="tech-grid">
+            <div class="tech-item"><span class="emoji">🔤</span><div><strong>RapidOCR</strong><span>本地中英文 OCR 引擎</span></div></div>
+            <div class="tech-item"><span class="emoji">🧠</span><div><strong>DeepSeek Chat</strong><span>大语言模型 · 解析 + 分类</span></div></div>
+            <div class="tech-item"><span class="emoji">🌐</span><div><strong>Streamlit</strong><span>Web UI · 可编辑表格</span></div></div>
+            <div class="tech-item"><span class="emoji">👁️</span><div><strong>OpenCV</strong><span>HSV 高亮区域检测</span></div></div>
+            <div class="tech-item"><span class="emoji">📄</span><div><strong>PyMuPDF</strong><span>PDF 渲染与文本提取</span></div></div>
+            <div class="tech-item"><span class="emoji">📊</span><div><strong>openpyxl</strong><span>Excel 读写与格式复制</span></div></div>
+            <div class="tech-item"><span class="emoji">💱</span><div><strong>中国外汇交易中心</strong><span>人民银行官方汇率数据</span></div></div>
+            <div class="tech-item"><span class="emoji">🐍</span><div><strong>Python 3.10+</strong><span>Windows / macOS / Linux</span></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ Install ════════════ -->
+<div class="section" id="install">
+    <h2>安装与<span>使用</span></h2>
+    <div class="install-steps">
+
+        <div class="install-step">
+            <h4><span class="step-num">1</span>克隆项目</h4>
+<pre><code>git clone https://github.com/royhuroy/expensetool.git
+cd expensetool</code></pre>
+        </div>
+
+        <div class="install-step">
+            <h4><span class="step-num">2</span>安装依赖</h4>
+<pre><code>pip install -r requirements.txt</code></pre>
+        </div>
+
+        <div class="install-step">
+            <h4><span class="step-num">3</span>配置 API Key</h4>
+            <p>复制 <code>.env.example</code> 为 <code>.env</code>，填入你的 DeepSeek API Key：</p>
+<pre><code>cp .env.example .env
+# 编辑 .env 文件，填入：
+DEEPSEEK_API_KEY=sk-你的密钥</code></pre>
+            <div class="note">
+                💡 DeepSeek API Key 获取地址：<a href="https://platform.deepseek.com/" target="_blank">platform.deepseek.com</a>
+            </div>
+        </div>
+
+        <div class="install-step">
+            <h4><span class="step-num">4</span>配置报销人员</h4>
+            <p>编辑 <code>data/persons.json</code>，添加你公司的报销人员及分类规则：</p>
+<pre><code>{
+  "persons": [
+    {
+      "name": "张三",
+      "role": "投资同事",
+      "dining_rule": "所有餐饮 → 招待费",
+      "overseas_rule": "海外出差使用 美国-交通费 / 美国-招待费",
+      "notes": "差旅较多"
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <div class="install-step">
+            <h4><span class="step-num">5</span>放入发票 &amp; 启动</h4>
+            <p>将待报销的文件放入 <code>invoices/</code> 文件夹（支持子文件夹分类），然后：</p>
+<pre><code># Windows：双击「启动报销工具.bat」
+# 或手动运行：
+streamlit run src/app.py</code></pre>
+            <p style="margin-top:10px;">浏览器将自动打开 <code>http://localhost:8501</code>，按界面提示操作即可。</p>
+        </div>
+
+        <div class="install-step">
+            <h4><span class="step-num">6</span>查看输出</h4>
+            <p>处理完成后，<code>output/</code> 文件夹中会生成：</p>
+            <ul style="margin-top:8px; padding-left:20px; font-size:0.92rem; color:#555;">
+                <li><strong>Roy_2026年3月_报销报表.xlsx</strong> — 报销 Excel 报表</li>
+                <li><strong>renamed_files/</strong> — 按「一级-二级-三级-币种-金额」重命名的发票文件</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<!-- ════════════ Supported Files ════════════ -->
+<div class="section" style="background:#fff; max-width:100%; padding:56px 24px;">
+    <h2>支持的<span>文件类型</span></h2>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+        <span class="badge" style="background:#e8e6ff; color:#6c63ff; font-size:1rem; padding:10px 20px;">📄 PDF</span>
+        <span class="badge" style="background:#e8e6ff; color:#6c63ff; font-size:1rem; padding:10px 20px;">🖼️ JPG / JPEG</span>
+        <span class="badge" style="background:#e8e6ff; color:#6c63ff; font-size:1rem; padding:10px 20px;">🖼️ PNG</span>
+        <span class="badge" style="background:#e8e6ff; color:#6c63ff; font-size:1rem; padding:10px 20px;">📱 HEIC / HEIF</span>
+        <span class="badge" style="background:#e8e6ff; color:#6c63ff; font-size:1rem; padding:10px 20px;">🖼️ TIFF</span>
+    </div>
+    <p style="text-align:center; margin-top:20px; color:#888; font-size:0.9rem;">
+        信用卡账单文件名包含「所有明细」→ 识别全部交易 &nbsp;|&nbsp; 包含「highlight」→ 仅识别高亮交易
+    </p>
+</div>
+
+<!-- ════════════ Footer ════════════ -->
+<footer>
+    <p>
+        <a href="https://github.com/royhuroy/expensetool" target="_blank">GitHub</a> ·
+        MIT License · 数据完全在本地处理，仅 LLM 分类请求发送至 DeepSeek API
+    </p>
+    <p style="margin-top:8px;">Made with ☕ by Roy · 2026</p>
+</footer>
+
+</body>
+</html>
