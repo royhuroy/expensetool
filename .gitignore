@@ -1,0 +1,23 @@
+# Sensitive
+.env
+
+# Runtime data
+data/exchange_rate_cache/
+data/expense_tool.log
+data/processed.json
+output/
+
+# Invoices (user data)
+invoices/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
