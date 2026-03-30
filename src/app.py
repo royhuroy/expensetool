@@ -477,6 +477,7 @@ def _render_editable_table(records: list[dict]):
 
         rows.append({
             "_idx": i,
+            "📂": False,
             "保留": not (rec.get("_skipped", False) or is_dup),
             "置信度": conf,
             "文件": rec.get("_source_file", ""),
@@ -498,6 +499,7 @@ def _render_editable_table(records: list[dict]):
     # Editable table
     column_config = {
         "_idx": None,  # hidden
+        "📂": st.column_config.CheckboxColumn("📂", default=False, width="small"),
         "保留": st.column_config.CheckboxColumn("保留", default=True, width="small"),
         "置信度": st.column_config.TextColumn("置信度", width="small", disabled=True),
         "文件": st.column_config.TextColumn("文件", width="medium", disabled=True),
@@ -514,50 +516,34 @@ def _render_editable_table(records: list[dict]):
         "AI理由": st.column_config.TextColumn("AI理由", width="large", disabled=True),
     }
 
+    column_order = ["📂", "保留", "置信度", "文件", "类型", "日期", "供应商", "描述",
+                     "金额", "币种", "人民币", "一级", "二级", "三级", "AI理由"]
+
     table_height = min(800, 50 + len(rows) * 35)
 
-    # Layout: file-open buttons on the left, table on the right
+    edited_df = st.data_editor(
+        df,
+        column_config=column_config,
+        column_order=column_order,
+        use_container_width=True,
+        hide_index=True,
+        num_rows="fixed",
+        height=table_height,
+        key="records_editor",
+    )
+
+    # Open selected files
     invoices_dir = st.session_state.get("invoices_dir")
     if invoices_dir:
-        btn_col, table_col = st.columns([1, 14])
-        with btn_col:
-            st.markdown("<small>📂 打开</small>", unsafe_allow_html=True)
-            for row_num, rec_idx in enumerate(ordered_indices):
-                fname = records[rec_idx].get("_source_file", "")
-                if fname:
-                    fpath = Path(invoices_dir) / fname
-                    if fpath.exists():
-                        if st.button(
-                            f"#{row_num+1}",
-                            key=f"open_row_{row_num}",
-                            help=fname,
-                            use_container_width=True,
-                        ):
+        selected_rows = edited_df[edited_df["📂"] == True]
+        if not selected_rows.empty:
+            if st.button(f"📂 打开选中的 {len(selected_rows)} 个文件", use_container_width=False):
+                for _, row in selected_rows.iterrows():
+                    fname = row["文件"]
+                    if fname:
+                        fpath = Path(invoices_dir) / fname
+                        if fpath.exists():
                             _open_file_button(fpath)
-                    else:
-                        st.button(f"#{row_num+1}", key=f"open_row_{row_num}", disabled=True, use_container_width=True)
-                else:
-                    st.button(f"#{row_num+1}", key=f"open_row_{row_num}", disabled=True, use_container_width=True)
-        with table_col:
-            edited_df = st.data_editor(
-                df,
-                column_config=column_config,
-                use_container_width=True,
-                hide_index=True,
-                num_rows="fixed",
-                height=table_height,
-                key="records_editor",
-            )
-    else:
-        edited_df = st.data_editor(
-            df,
-            column_config=column_config,
-            use_container_width=True,
-            hide_index=True,
-            num_rows="fixed",
-            height=table_height,
-            key="records_editor",
-        )
 
     # Apply edits back to records
     col1, col2 = st.columns(2)
