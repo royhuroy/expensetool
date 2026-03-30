@@ -378,20 +378,23 @@ def normalize_classifications(records: list[dict]) -> list[dict]:
             if len(cluster) > 1:
                 clusters.append(cluster)
 
-        # L1 categories where L2 is a unique vendor/provider name — don't unify
-        _VENDOR_L2 = {"招待费", "美国-招待费", "交通费", "美国出差打车", "快递费", "差旅费"}
+        # L1 categories where each record's L2 is unique per record — don't unify
+        _SKIP_L2_UNIFY = {
+            "招待费", "美国-招待费", "交通费", "美国出差打车",
+            "快递费", "差旅费", "团建费",
+        }
 
-        # Unify each cluster: pick the most detailed L2 only (L3 stays unique per record)
-        # Skip for vendor-name categories so each record keeps its own vendor L2
-        if l1 not in _VENDOR_L2:
+        # Unify each cluster: pick the most common L2 (majority rule)
+        # Skip for categories where L2 is inherently per-record (vendor/activity name)
+        if l1 not in _SKIP_L2_UNIFY:
+            from collections import Counter
             for cluster in clusters:
-                best_l2 = ""
-                for rec in cluster:
-                    l2 = rec.get("category_l2", "")
-                    if len(l2) > len(best_l2):
-                        best_l2 = l2
-                for rec in cluster:
-                    rec["category_l2"] = best_l2
+                l2_counts = Counter(rec.get("category_l2", "") for rec in cluster)
+                most_common_l2, count = l2_counts.most_common(1)[0]
+                # Only unify if majority agrees (> 50%)
+                if most_common_l2 and count > len(cluster) / 2:
+                    for rec in cluster:
+                        rec["category_l2"] = most_common_l2
 
     return records
 
