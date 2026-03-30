@@ -429,16 +429,43 @@ def _render_editable_table(records: list[dict]):
     L1_OPTIONS = [
         "软件费", "会议培训费", "会议费", "礼品费",
         "美国出差打车", "宣传费", "快递费", "通讯费", "办公费",
-        "美国-招待费", "团建费", "美国-办公费", "交通费", "招待费",
+        "美国-招待费", "团建费", "美国-办公费", "交通费", "招待费", "差旅费",
     ]
 
-    # Build editable dataframe
-    rows = []
+    # ── Reorder records so duplicates appear right after their original ──
+    ordered_indices: list[int] = []
+    used: set[int] = set()
     for i, rec in enumerate(records):
+        if i in used:
+            continue
+        # Skip records that are themselves duplicates; they'll be placed after their original
+        if rec.get("_duplicate_of") or rec.get("_duplicate_of_history"):
+            continue
+        ordered_indices.append(i)
+        used.add(i)
+        # Attach any duplicates that reference this record's source file
+        src = rec.get("_source_file", "")
+        if src:
+            for j, other in enumerate(records):
+                if j in used:
+                    continue
+                if other.get("_duplicate_of") == src or other.get("_duplicate_of_history") == src:
+                    ordered_indices.append(j)
+                    used.add(j)
+    # Remaining (orphan dups whose originals aren't in this batch)
+    for i in range(len(records)):
+        if i not in used:
+            ordered_indices.append(i)
+
+    # Build editable dataframe (using reordered indices)
+    rows = []
+    for i in ordered_indices:
+        rec = records[i]
         conf = rec.get("confidence", "")
         is_dup = "_duplicate_of" in rec or "_duplicate_of_history" in rec
+        dup_src = rec.get("_duplicate_of") or rec.get("_duplicate_of_history", "")
         if is_dup:
-            conf = "⚠️重复"
+            conf = f"⚠️重复({Path(dup_src).name})" if dup_src else "⚠️重复"
         elif conf == "high":
             conf = "✅高"
         elif conf == "medium":
@@ -468,19 +495,6 @@ def _render_editable_table(records: list[dict]):
 
     df = pd.DataFrame(rows)
 
-    # File open buttons - render as a row of buttons above the table
-    invoices_dir = st.session_state.get("invoices_dir")
-    if invoices_dir:
-        with st.expander("📂 查看原始文件（点击文件名打开）", expanded=False):
-            unique_files = sorted(set(r.get("_source_file", "") for r in records if r.get("_source_file")))
-            cols = st.columns(min(4, len(unique_files)) if unique_files else 1)
-            for j, fname in enumerate(unique_files):
-                col = cols[j % len(cols)]
-                fpath = Path(invoices_dir) / fname
-                if fpath.exists():
-                    if col.button(f"📄 {fname}", key=f"open_{j}", use_container_width=True):
-                        _open_file_button(fpath)
-
     # Editable table
     column_config = {
         "_idx": None,  # hidden
@@ -494,21 +508,56 @@ def _render_editable_table(records: list[dict]):
         "金额": st.column_config.NumberColumn("金额", width="small"),
         "币种": st.column_config.TextColumn("币种", width="small"),
         "人民币": st.column_config.TextColumn("人民币", width="small", disabled=True),
-        "一级": st.column_config.SelectboxColumn("一级", options=L1_OPTIONS, width="medium"),
+        "一级": st.column_config.TextColumn("一级", width="medium"),
         "二级": st.column_config.TextColumn("二级", width="medium"),
         "三级": st.column_config.TextColumn("三级", width="medium"),
         "AI理由": st.column_config.TextColumn("AI理由", width="large", disabled=True),
     }
 
-    edited_df = st.data_editor(
-        df,
-        column_config=column_config,
-        use_container_width=True,
-        hide_index=True,
-        num_rows="fixed",
-        height=min(800, 50 + len(rows) * 35),
-        key="records_editor",
-    )
+    table_height = min(800, 50 + len(rows) * 35)
+
+    # Layout: file-open buttons on the left, table on the right
+    invoices_dir = st.session_state.get("invoices_dir")
+    if invoices_dir:
+        btn_col, table_col = st.columns([1, 14])
+        with btn_col:
+            st.markdown("<small>📂 打开</small>", unsafe_allow_html=True)
+            for row_num, rec_idx in enumerate(ordered_indices):
+                fname = records[rec_idx].get("_source_file", "")
+                if fname:
+                    fpath = Path(invoices_dir) / fname
+                    if fpath.exists():
+                        if st.button(
+                            f"#{row_num+1}",
+                            key=f"open_row_{row_num}",
+                            help=fname,
+                            use_container_width=True,
+                        ):
+                            _open_file_button(fpath)
+                    else:
+                        st.button(f"#{row_num+1}", key=f"open_row_{row_num}", disabled=True, use_container_width=True)
+                else:
+                    st.button(f"#{row_num+1}", key=f"open_row_{row_num}", disabled=True, use_container_width=True)
+        with table_col:
+            edited_df = st.data_editor(
+                df,
+                column_config=column_config,
+                use_container_width=True,
+                hide_index=True,
+                num_rows="fixed",
+                height=table_height,
+                key="records_editor",
+            )
+    else:
+        edited_df = st.data_editor(
+            df,
+            column_config=column_config,
+            use_container_width=True,
+            hide_index=True,
+            num_rows="fixed",
+            height=table_height,
+            key="records_editor",
+        )
 
     # Apply edits back to records
     col1, col2 = st.columns(2)
